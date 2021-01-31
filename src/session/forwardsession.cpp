@@ -35,7 +35,7 @@ tcp::socket& ForwardSession::accept_socket() {
     return in_socket;
 }
 
-void ForwardSession::start() {
+void ForwardSession::start(uint8_t id) {
     boost::system::error_code ec;
     start_time = time(NULL);
     in_endpoint = in_socket.remote_endpoint(ec);

@@ -21,9 +21,13 @@
 #include "proto/trojanrequest.h"
 #include "proto/udppacket.h"
 #include "ssl/sslsession.h"
+#include <random>
+
 using namespace std;
 using namespace boost::asio::ip;
 using namespace boost::asio::ssl;
+static  std::mt19937 rng;    
+
 
 ClientSession::ClientSession(const Config &config, boost::asio::io_context &io_context, context &ssl_context) :
     Session(config, io_context),
@@ -36,7 +40,7 @@ tcp::socket& ClientSession::accept_socket() {
     return in_socket;
 }
 
-void ClientSession::start() {
+void ClientSession::start(uint8_t id) {
     boost::system::error_code ec;
     start_time = time(NULL);
     in_endpoint = in_socket.remote_endpoint(ec);
@@ -54,6 +58,19 @@ void ClientSession::start() {
             SSL_set_session(ssl, session);
         }
     }
+    //calculate if remote host pool > 1
+    uint8_t uAnchor = config.remote_addresses.size();
+    //if (uAnchor>1) {
+    if (uAnchor >1 && id < uAnchor ) {
+        remote_addr_session = config.remote_addresses[id];
+    //    static std::uniform_int_distribution<> six(0,uAnchor-1);
+    //    remote_addr_session = config.remote_addresses[six(rng)];
+
+        Log::log_with_date_time("++ new session with id"+to_string(id), Log::ALL);
+    }
+    else
+        remote_addr_session = config.remote_addr;
+
     in_async_read();
 }
 
@@ -222,17 +239,21 @@ void ClientSession::in_sent() {
                 udp_async_read();
             }
             auto self = shared_from_this();
-            resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
+            //resolver.async_resolve(config.remote_addr, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
+            resolver.async_resolve(remote_addr_session, to_string(config.remote_port), [this, self](const boost::system::error_code error, tcp::resolver::results_type results) {
                 if (error) {
-                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + config.remote_addr + ": " + error.message(), Log::ERROR);
+                    Log::log_with_endpoint(in_endpoint, "cannot resolve remote server hostname " + remote_addr_session + ": " + error.message(), Log::ERROR);
+                    Log::incServerErr(remote_addr_session);
                     destroy();
+
                     return;
                 }
                 auto iterator = results.begin();
-                Log::log_with_endpoint(in_endpoint, config.remote_addr + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
+                Log::log_with_endpoint(in_endpoint, remote_addr_session + " is resolved to " + iterator->endpoint().address().to_string(), Log::ALL);
                 boost::system::error_code ec;
                 out_socket.next_layer().open(iterator->endpoint().protocol(), ec);
                 if (ec) {
+                    Log::incServerErr(remote_addr_session);
                     destroy();
                     return;
                 }
@@ -251,13 +272,15 @@ void ClientSession::in_sent() {
 #endif // TCP_FASTOPEN_CONNECT
                 out_socket.next_layer().async_connect(*iterator, [this, self](const boost::system::error_code error) {
                     if (error) {
-                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                        Log::log_with_endpoint(in_endpoint, "cannot establish connection to remote server " + remote_addr_session + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                        Log::incServerErr(remote_addr_session);
                         destroy();
                         return;
                     }
                     out_socket.async_handshake(stream_base::client, [this, self](const boost::system::error_code error) {
                         if (error) {
-                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + config.remote_addr + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                            Log::log_with_endpoint(in_endpoint, "SSL handshake failed with " + remote_addr_session + ':' + to_string(config.remote_port) + ": " + error.message(), Log::ERROR);
+                            Log::incServerErr(remote_addr_session);
                             destroy();
                             return;
                         }

@@ -22,6 +22,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/foreach.hpp>
 #include <openssl/evp.h>
 using namespace std;
 using namespace boost::property_tree;
@@ -58,6 +59,24 @@ void Config::populate(const ptree &tree) {
     remote_port = tree.get("remote_port", uint16_t());
     target_addr = tree.get("target_addr", string());
     target_port = tree.get("target_port", uint16_t());
+    //////remote_addresses
+    try{
+    vector< string>().swap(remote_addresses);
+    BOOST_FOREACH(const ptree::value_type &v , tree.get_child("remote_addresses")) {
+        //f (item.first.empty()) {
+         //   string p = item.second.get_value<string>();
+         std::string rSrv = v.second.data();
+         Log::log("found remote server : "+rSrv, Log::FATAL);
+        remote_addresses.push_back(rSrv);
+        Log::initServerErrStatus(rSrv);
+    }
+    Log::log("init server pool = " + std::to_string(remote_addresses.size()), Log::FATAL);
+    }
+    catch(...)
+    {
+        Log::log("single server mode",Log::FATAL);
+    }
+    //////
     map<string, string>().swap(password);
     for (auto& item: tree.get_child("password")) {
         string p = item.second.get_value<string>();
@@ -153,3 +172,20 @@ string Config::SHA224(const string &message) {
     EVP_MD_CTX_free(ctx);
     return string(mdString);
 }
+/*
+string Config::remoteAddrLB(const bool &newTrans) {
+    string temp;
+    if (remote_addresses.size()>0 ){
+        temp = remote_addresses[uAnchor];
+
+       if (newTrans)  {
+           uAnchor ++;
+           if (uAnchor == remote_addresses.size()) uAnchor = 0;
+       }
+
+       return temp;
+    }
+    else if (newTrans)
+        return remote_addr;
+}
+*/

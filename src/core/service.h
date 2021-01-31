@@ -44,6 +44,7 @@ private:
     boost::asio::ip::udp::endpoint udp_recv_endpoint;
     void async_accept();
     void udp_async_read();
+
 public:
     Service(Config &config, bool test = false);
     void run();
@@ -51,6 +52,8 @@ public:
     boost::asio::io_context &service();
     void reload_cert();
     ~Service();
+
+    uint8_t roundrobin();
 };
 
 #endif // _SERVICE_H_

@@ -36,6 +36,7 @@ public:
     std::string local_addr;
     uint16_t local_port;
     std::string remote_addr;
+    std::vector<std::string> remote_addresses;
     uint16_t remote_port;
     std::string target_addr;
     uint16_t target_port;

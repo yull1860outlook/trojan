@@ -40,7 +40,7 @@ tcp::socket& UDPForwardSession::accept_socket() {
     throw logic_error("accept_socket does not exist in UDPForwardSession");
 }
 
-void UDPForwardSession::start() {
+void UDPForwardSession::start(uint8_t id) {
     timer_async_wait();
     start_time = time(NULL);
     auto ssl = out_socket.native_handle();

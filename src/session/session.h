@@ -50,7 +50,7 @@ protected:
 public:
     Session(const Config &config, boost::asio::io_context &io_context);
     virtual boost::asio::ip::tcp::socket& accept_socket() = 0;
-    virtual void start() = 0;
+    virtual void start(uint8_t id=0) = 0;
     virtual ~Session();
 };
 

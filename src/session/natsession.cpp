@@ -76,7 +76,7 @@ pair<string, uint16_t> NATSession::get_target_endpoint() {
 #endif // ENABLE_NAT
 }
 
-void NATSession::start() {
+void NATSession::start(uint8_t id) {
     boost::system::error_code ec;
     start_time = time(NULL);
     in_endpoint = in_socket.remote_endpoint(ec);

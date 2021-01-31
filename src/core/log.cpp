@@ -34,6 +34,7 @@ using namespace boost::asio::ip;
 Log::Level Log::level(INFO);
 FILE *Log::keylog(NULL);
 FILE *Log::output_stream(stderr);
+std::map <std::string , uint16_t> Log::error_status;
 
 void Log::log(const string &message, Level level) {
     if (level >= Log::level) {
@@ -92,4 +93,22 @@ void Log::reset() {
         fclose(keylog);
         keylog = NULL;
     }
+}
+
+void Log::initServerErrStatus(const std::string &remote_srv){
+    error_status[remote_srv] = 0;
+}
+
+uint16_t Log::getSrvErrorStat(const std::string &remote_srv){
+    auto key = error_status.find(remote_srv);
+    if (key!=error_status.end())
+        return error_status[remote_srv];
+    return 0;
+}
+
+void Log::incServerErr(const std::string &remote_srv) {
+    error_status[remote_srv] ++;
+
+    log("srv "+remote_srv+" ec = "+std::to_string(error_status[remote_srv]),FATAL);
+
 }

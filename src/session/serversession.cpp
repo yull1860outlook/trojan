@@ -37,7 +37,7 @@ tcp::socket& ServerSession::accept_socket() {
     return (tcp::socket&)in_socket.next_layer();
 }
 
-void ServerSession::start() {
+void ServerSession::start(uint8_t id) {
     boost::system::error_code ec;
     start_time = time(NULL);
     in_endpoint = in_socket.next_layer().remote_endpoint(ec);

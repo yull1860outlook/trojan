@@ -22,6 +22,7 @@
 #include <cerrno>
 #include <stdexcept>
 #include <fstream>
+#include <ctime>
 #ifdef _WIN32
 #include <wincrypt.h>
 #include <tchar.h>
@@ -302,6 +303,47 @@ void Service::stop() {
     io_context.stop();
 }
 
+static uint16_t uCount =0;   // total session since trojan startup / reset > 9999
+static time_t blockstart=0;     // block 30 mins if a remote srv error  
+
+uint8_t Service::roundrobin(){
+    if (config.run_type == Config::CLIENT && config.remote_addresses.size()>1)
+    {
+        uCount++;
+        uint8_t id = uCount % config.remote_addresses.size();
+        const string srv = config.remote_addresses[id];
+
+        /////skip the node if error ////
+        bool skip = false;
+        uint16_t err =  Log::getSrvErrorStat(srv);
+        if (err>5) {
+            time_t now = std::time(nullptr);     
+            if (blockstart == 0 ) {
+                //start a new block - 30min to review
+                blockstart = now;       
+                skip = true;    
+            }
+            else{
+                if (difftime(now, blockstart) > 1800) { 
+                    Log::initServerErrStatus(srv); //reset error count
+                    blockstart = 0; //reset time
+                    //skip = false;
+                }
+                else skip = true;  // continue block < 30min
+            }
+
+            if (skip ==true) {
+               id =  (id +1) % config.remote_addresses.size();
+            }
+        }
+
+        if (uCount >= 10000 ) uCount = 0;
+        return id;        
+    }
+    else
+        return 0;
+}
+
 void Service::async_accept() {
     shared_ptr<Session>session(nullptr);
     if (config.run_type == Config::SERVER) {
@@ -323,7 +365,8 @@ void Service::async_accept() {
             auto endpoint = session->accept_socket().remote_endpoint(ec);
             if (!ec) {
                 Log::log_with_endpoint(endpoint, "incoming connection");
-                session->start();
+
+                session->start(roundrobin());
             }
         }
         async_accept();

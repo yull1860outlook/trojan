@@ -54,7 +54,7 @@ private:
 public:
     ServerSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context, Authenticator *auth, const std::string &plain_http_response);
     boost::asio::ip::tcp::socket& accept_socket();
-    void start();
+    void start(uint8_t id=0);
 };
 
 #endif // _SERVERSESSION_H_

@@ -23,6 +23,7 @@ using namespace std;
 list<SSL_SESSION*>SSLSession::sessions;
 
 int SSLSession::new_session_cb(SSL*, SSL_SESSION *session) {
+    
     sessions.push_front(session);
     return 0;
 }

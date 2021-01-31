@@ -36,6 +36,7 @@ private:
     } status;
     bool is_udp;
     bool first_packet_recv;
+    std::string remote_addr_session;
     boost::asio::ip::tcp::socket in_socket;
     boost::asio::ssl::stream<boost::asio::ip::tcp::socket>out_socket;
     void destroy();
@@ -54,7 +55,7 @@ private:
 public:
     ClientSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
     boost::asio::ip::tcp::socket& accept_socket();
-    void start();
+    void start(uint8_t id=0);
 };
 
 #endif // _CLIENTSESSION_H_

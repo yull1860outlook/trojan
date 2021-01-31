@@ -46,7 +46,7 @@ private:
 public:
     NATSession(const Config &config, boost::asio::io_context &io_context, boost::asio::ssl::context &ssl_context);
     boost::asio::ip::tcp::socket& accept_socket();
-    void start();
+    void start(uint8_t id=0);
 };
 
 #endif // _NATSESSION_H_

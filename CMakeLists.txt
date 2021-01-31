@@ -58,7 +58,7 @@ if(OPENSSL_VERSION VERSION_GREATER_EQUAL 1.1.1)
     endif()
 endif()
 
-option(ENABLE_MYSQL "Build with MySQL support" ON)
+option(ENABLE_MYSQL "Build with MySQL support" OFF)
 if(ENABLE_MYSQL)
     find_package(MySQL REQUIRED)
     include_directories(${MYSQL_INCLUDE_DIR})

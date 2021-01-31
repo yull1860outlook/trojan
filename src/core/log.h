@@ -22,6 +22,7 @@
 
 #include <cstdio>
 #include <string>
+#include <map>
 #include <boost/asio/ip/tcp.hpp>
 
 #ifdef ERROR // windows.h
@@ -40,14 +41,21 @@ public:
     };
     static Level level;
     static FILE *keylog;
+    static std::map<std::string, uint16_t> error_status;  //use to indicate remote server erro
+
     static void log(const std::string &message, Level level = ALL);
     static void log_with_date_time(const std::string &message, Level level = ALL);
     static void log_with_endpoint(const boost::asio::ip::tcp::endpoint &endpoint, const std::string &message, Level level = ALL);
     static void redirect(const std::string &filename);
     static void redirect_keylog(const std::string &filename);
     static void reset();
+    static void initServerErrStatus(const std::string &remote_srv);
+    static void incServerErr(const std::string &remote_srv);
+    static uint16_t getSrvErrorStat(const std::string &remote_srv);
 private:
     static FILE *output_stream;
 };
+
+
 
 #endif // _LOG_H_
